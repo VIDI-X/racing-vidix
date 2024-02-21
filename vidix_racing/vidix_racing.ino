@@ -1,5 +1,6 @@
 #include <Adafruit_ILI9341.h>
 #include <Adafruit_GFX.h>
+#include "Engine.h"
 
 int PinTipkalo_L_R = 34;
 int PinTipkalo_U_D = 35;
@@ -17,16 +18,34 @@ Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 int menueoptions;
 int start;
 
+//EXAMPLE
+int numOfVerts = 3, numOfTris = 1;
+Matrix<3> verteces[] = {{-1, -1, 0}, {1, -1, 0}, {0, 1, 0}};
+Matrix<3, 1, int> triangles[] = {{0, 1, 2}};
+Object triangle = Object(numOfVerts, verteces, numOfTris, triangles);
+Camera camera = Camera();
+//
+
 void setup() {
   pinsetup();
   menuescreen();
   menueoptions = 0;
   start = 0;
+
+  //EXAMPLE
+  camera.position = {0, 0, -10};
+  //
 }
 
 void loop() {
   menueselection();
   startpoint();
+
+  //EXAMPLE
+  if (start == 1){
+    Matrix<3> verts[triangle.numOfVerts]
+  }
+  //
 }
 
 void menuescreen() {
@@ -96,7 +115,7 @@ void startpoint() {
   if (start == 0) {
     if ((digitalRead(PinTipkalo_A) == LOW) && (menueoptions == 1)) {
       start = 1;
-      tft.fillScreen(ILI9341_WHITE);
+      tft.fillScreen(ILI9341_BLACK);
     }
   }
 }
