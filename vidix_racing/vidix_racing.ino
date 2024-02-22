@@ -44,13 +44,20 @@ void loop() {
   camera.drawObject(car, tft, ILI9341_BLACK);
   //camera.position= {car.position(0),car.position(1)+1,car.position(2)-2};
   //
+  Matrix<4> forward = {0, 0, 1, 0};
+  forward = car.getObjectToWorldMatrix() * forward;
 
   if (analogRead(PinTipkalo_U_D) > 4000) {
-    car.position(2) += 1;
+    car.position(2) += forward(2);
+    car.position(1) += forward(1);
+    car.position(0) += forward(0);
+
   }
 
   else if (analogRead(PinTipkalo_U_D) > 1800 and analogRead(PinTipkalo_U_D) < 2000) {
-    car.position(2) -= 1;
+    car.position(2) -= forward(2);
+    car.position(1) -= forward(1);
+    car.position(0) -= forward(0);
   }
   if (analogRead(PinTipkalo_L_R) > 4000) {
     car.rotation(1) += 0.2;

@@ -87,7 +87,7 @@ public:
       0, 0, 0, 1
     };
 
-    return rotateMatZ * rotateMatY * rotateMatX * scaleMat * translationMat;
+    return translationMat * rotateMatX * rotateMatY * rotateMatZ * scaleMat;
   }
 };
 
