@@ -17,21 +17,21 @@ public:
   Matrix<3> rotation;
   Matrix<3> scale;
 
-  /*Object(Object &other){
-    this->numOfVerts = other.numOfVerts;
+  Object(Object *other){
+    this->numOfVerts = other->numOfVerts;
     this->verteces = (Matrix<3>*)malloc(this->numOfVerts * sizeof(Matrix<3>));
     for (int i = 0; i < this->numOfVerts; i++){
-      this->verteces[i] = other.verteces[i];
+      this->verteces[i] = other->verteces[i];
     }
-    this->numOfTris = other.numOfTris;
+    this->numOfTris = other->numOfTris;
     this->triangles = (Matrix<3, 1, int>*)malloc(this->numOfTris * sizeof(Matrix<3, 1, int>));
     for (int i = 0; i < this->numOfTris; i++){
-      this->triangles[i] = other.triangles[i];
+      this->triangles[i] = other->triangles[i];
     }
-    this->position = other.position;
-    this->rotation = other.rotation;
-    this->scale = other.scale;
-  }*/
+    this->position = other->position;
+    this->rotation = other->rotation;
+    this->scale = other->scale;
+  }
 
   Object(int numOfVerts, Matrix<3> verteces[], int numOfTris, Matrix<3, 1, int> triangles[]) {
     this->numOfVerts = numOfVerts;

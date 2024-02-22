@@ -17,9 +17,7 @@ int menuOptions;
 int start;
 
 //EXAMPLE
-Matrix<3> verteces[] = { { -1, -1, 0 }, { 1, -1, 0 }, { 0, 1, 0 } };
-Matrix<3, 1, int> triangles[] = { { 0, 1, 2 } };
-Object triangle = Object(3, verteces, 1, triangles);
+Object triangle = Object(&CUBE);
 Camera camera = Camera();
 //
 
@@ -30,11 +28,9 @@ void setup() {
   menuOptions = 0;
   start = 1;
 
-  //memcpy(&TRIANGLE, tri, sizeof(Object));
-
   //EXAMPLE
   camera.position = { 0, 0, -10 };
-  triangle.scale = { 9, 6, 1 };
+  triangle.scale = { 5, 5, 5 };
   //
 }
 
@@ -46,7 +42,9 @@ void loop() {
   camera.drawObject(triangle, tft, ILI9341_WHITE);
   delay(40);
   camera.drawObject(triangle, tft, ILI9341_BLACK);
+  triangle.rotation(0) += 0.1;
   triangle.rotation(1) += 0.1;
+  triangle.rotation(2) += 0.1;
   //
 
   if (analogRead(PinTipkalo_U_D) > 4000) {

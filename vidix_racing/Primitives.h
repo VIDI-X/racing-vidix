@@ -1,7 +1,5 @@
 #include "Engine.h"
 
-
-
 Matrix<3> TRIANGLE_VERTS[] = { { -1, -1, 0 }, { 1, -1, 0 }, { 0, 1, 0 } };
 Matrix<3, 1, int> TRINAGLE_TRIS[] = { { 0, 1, 2 } };
 Object TRIANGLE = Object(3, TRIANGLE_VERTS, 1, TRINAGLE_TRIS);
