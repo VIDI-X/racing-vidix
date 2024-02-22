@@ -1,10 +1,9 @@
-#include <BasicLinearAlgebra.h>
 #include <Adafruit_ILI9341.h>
 #include <Adafruit_GFX.h>
+#include "Staza.h"
 
 #define TFT_WIDTH 320
 #define TFT_HEIGHT 240
-using namespace BLA;
 
 class Object {
 public:
@@ -203,6 +202,29 @@ public:
         verteces[object.triangles[i](2)](0), verteces[object.triangles[i](2)](1),
         color
       );
+    }
+  }
+
+  void drawPolygon(Polygon &polygon, Adafruit_ILI9341 &tft, int color){
+    Matrix<4, 4> worldToViewMat = getWorldToViewMat();
+    Matrix<4, 4> perspectiveMat = getPerspectiveMat();
+    Matrix<4, 4> objectToScreenMat = perspectiveMat * worldToViewMat;
+
+    Matrix<4> points[polygon.numOfPoints];
+    for (int i = 0; i < polygon.numOfPoints; i++) {
+      points[i] = { polygon.points[i](0), polygon.points[i](1), 0, 1 };
+      points[i] = objectToScreenMat * points[i];
+
+      if (points[i](3) != 0)
+        points[i] /= points[i](3);
+      points[i](0) = (points[i](0) + 1) / 2;
+      points[i](0) = points[i](0) * TFT_WIDTH;
+      points[i](1) = (points[i](1) + 1) / 2;
+      points[i](1) = (points[i](1) * TFT_HEIGHT);
+    }
+
+    for (int i = 0; i < polygon.numOfPoints; i++){
+      tft.drawLine(points[i](0), points[i](1), points[(i + 1) % polygon.numOfPoints](0), points[(i + 1) % polygon.numOfPoints](1), color);
     }
   }
 };
