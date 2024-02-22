@@ -30,7 +30,7 @@ void setup() {
 
   //EXAMPLE
   camera.position = { 0, 5, -5 };
-  camera.rotation(0)=0.2;
+  camera.rotation(0) = 0.2;
   car.scale = { 1, 1, 2 };
   //
 }
@@ -39,47 +39,37 @@ void loop() {
   menuselection();
   startpoint();
 
-  camera.drawObject(car, tft, ILI9341_WHITE);
-  delay(40);
-  camera.drawObject(car, tft, ILI9341_BLACK);
-
-  //EXAMPLE
-  camera.drawPolygon(stazaInner, tft,ILI9341_BLUE);
+  camera.drawPolygon(stazaInner, tft, ILI9341_BLUE);
   camera.drawPolygon(stazaOuter, tft, ILI9341_BLUE);
 
   camera.drawObject(car, tft, ILI9341_WHITE);
   delay(40);
   camera.drawObject(car, tft, ILI9341_BLACK);
-   camera.drawPolygon(stazaInner, tft,ILI9341_BLACK);
+  camera.drawPolygon(stazaInner, tft, ILI9341_BLACK);
   camera.drawPolygon(stazaOuter, tft, ILI9341_BLACK);
 
-
- 
-  
-  //
-  Matrix<4> forward = {0, 0, 1, 0};
+  Matrix<4> forward = { 0, 0, 1, 0 };
   forward = car.getObjectToWorldMatrix() * forward;
 
-
-   //camera.position= {forward(0),forward(1)+1,forward(2)-2};
+  Matrix<3> cameraOffset = {forward(0) * -3, forward(1) * -3, forward(2) * -3};
+  camera.position = car.position + cameraOffset;
+  camera.position(1) += 5;
   //camera.rotation= {car.rotation(0),car.rotation(1),car.rotation(2)};
 
-  if (analogRead(PinTipkalo_U_D) > 4000) {
+  if (digitalRead(PinTipkalo_A) == LOW) {
     car.position(2) += forward(2);
     car.position(1) += forward(1);
     car.position(0) += forward(0);
-
   }
-
-  else if (analogRead(PinTipkalo_U_D) > 1800 and analogRead(PinTipkalo_U_D) < 2000) {
+  if (digitalRead(PinTipkalo_B) == LOW) {
     car.position(2) -= forward(2);
     car.position(1) -= forward(1);
     car.position(0) -= forward(0);
   }
+
   if (analogRead(PinTipkalo_L_R) > 4000) {
     car.rotation(1) += 0.2;
   }
-
   else if (analogRead(PinTipkalo_L_R) > 1800 and analogRead(PinTipkalo_L_R) < 2000) {
     car.rotation(1) -= 0.2;
   }
