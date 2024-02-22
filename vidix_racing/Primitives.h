@@ -1,4 +1,5 @@
 #include "Engine.h"
+#include "Staza.h"
 
 Matrix<3> TRIANGLE_VERTS[] = { { -1, -1, 0 }, { 1, -1, 0 }, { 0, 1, 0 } };
 Matrix<3, 1, int> TRINAGLE_TRIS[] = { { 0, 1, 2 } };
