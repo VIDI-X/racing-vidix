@@ -208,15 +208,21 @@ public:
   void drawPolygon(Polygon &polygon, Adafruit_ILI9341 &tft, int color){
     Matrix<4, 4> worldToViewMat = getWorldToViewMat();
     Matrix<4, 4> perspectiveMat = getPerspectiveMat();
-    Matrix<4, 4> objectToScreenMat = perspectiveMat * worldToViewMat;
+    Matrix<4, 4> worldToScreenMat = perspectiveMat * worldToViewMat;
 
     Matrix<4> points[polygon.numOfPoints];
+    bool behind[polygon.numOfPoints];
     for (int i = 0; i < polygon.numOfPoints; i++) {
+      behind[i] = false;
       points[i] = { polygon.points[i](0), 0,  polygon.points[i](1), 1 };
-      points[i] = objectToScreenMat * points[i];
+      points[i] = worldToViewMat * points[i];
+      if (points[i](2) < znear) behind[i] = true;
+      points[i] = perspectiveMat * points[i];
 
-      if (points[i](3) != 0)
-        points[i] /= -abs(points[i](3));
+      if (points[i](3) != 0){
+        points[i](0) /= -abs(points[i](3));
+        points[i](1) /= -abs(points[i](3));
+      }
       points[i](0) = (points[i](0) + 1) / 2;
       points[i](0) = points[i](0) * TFT_WIDTH;
       points[i](1) = (points[i](1) + 1) / 2;
@@ -224,7 +230,7 @@ public:
     }
 
     for (int i = 0; i < polygon.numOfPoints; i++){
-      if (points[i](2) < -1 && points[(i + 1) % polygon.numOfPoints](2) < -1) continue;
+      if (behind[i] && behind[(i + 1) % polygon.numOfPoints]) continue;
       tft.drawLine(points[i](0), points[i](1), points[(i + 1) % polygon.numOfPoints](0), points[(i + 1) % polygon.numOfPoints](1), color);
     }
   }
