@@ -16,15 +16,15 @@ public:
   Matrix<3> rotation;
   Matrix<3> scale;
 
-  Object(Object *other){
+  Object(Object *other) {
     this->numOfVerts = other->numOfVerts;
-    this->verteces = (Matrix<3>*)malloc(this->numOfVerts * sizeof(Matrix<3>));
-    for (int i = 0; i < this->numOfVerts; i++){
+    this->verteces = (Matrix<3> *)malloc(this->numOfVerts * sizeof(Matrix<3>));
+    for (int i = 0; i < this->numOfVerts; i++) {
       this->verteces[i] = other->verteces[i];
     }
     this->numOfTris = other->numOfTris;
-    this->triangles = (Matrix<3, 1, int>*)malloc(this->numOfTris * sizeof(Matrix<3, 1, int>));
-    for (int i = 0; i < this->numOfTris; i++){
+    this->triangles = (Matrix<3, 1, int> *)malloc(this->numOfTris * sizeof(Matrix<3, 1, int>));
+    for (int i = 0; i < this->numOfTris; i++) {
       this->triangles[i] = other->triangles[i];
     }
     this->position = other->position;
@@ -195,17 +195,16 @@ public:
       verteces[i](1) = (verteces[i](1) * TFT_HEIGHT);
     }
 
-    for (int i = 0; i < object.numOfTris; i++){
+    for (int i = 0; i < object.numOfTris; i++) {
       tft.drawTriangle(
         verteces[object.triangles[i](0)](0), verteces[object.triangles[i](0)](1),
         verteces[object.triangles[i](1)](0), verteces[object.triangles[i](1)](1),
         verteces[object.triangles[i](2)](0), verteces[object.triangles[i](2)](1),
-        color
-      );
+        color);
     }
   }
 
-  void drawPolygon(Polygon &polygon, Adafruit_ILI9341 &tft, int color){
+  void drawPolygon(Polygon &polygon, Adafruit_ILI9341 &tft, int color) {
     Matrix<4, 4> worldToViewMat = getWorldToViewMat();
     Matrix<4, 4> perspectiveMat = getPerspectiveMat();
     Matrix<4, 4> worldToScreenMat = perspectiveMat * worldToViewMat;
@@ -214,24 +213,32 @@ public:
     bool behind[polygon.numOfPoints];
     for (int i = 0; i < polygon.numOfPoints; i++) {
       behind[i] = false;
-      points[i] = { polygon.points[i](0), 0,  polygon.points[i](1), 1 };
+      points[i] = { polygon.points[i](0), 0, polygon.points[i](1), 1 };
       points[i] = worldToViewMat * points[i];
       if (points[i](2) < znear) behind[i] = true;
       points[i] = perspectiveMat * points[i];
 
-      if (points[i](3) != 0){
-        points[i](0) /= -abs(points[i](3));
-        points[i](1) /= -abs(points[i](3));
+      if (points[i](3) != 0) {
+        points[i](0) /= (points[i](3));
+        points[i](1) /= (points[i](3));
       }
       points[i](0) = (points[i](0) + 1) / 2;
       points[i](0) = points[i](0) * TFT_WIDTH;
       points[i](1) = (points[i](1) + 1) / 2;
-      points[i](1) = (points[i](1) * TFT_HEIGHT);
+      points[i](1) = points[i](1) * TFT_HEIGHT;
     }
 
-    for (int i = 0; i < polygon.numOfPoints; i++){
+    for (int i = 0; i < polygon.numOfPoints; i++) {
       if (behind[i] && behind[(i + 1) % polygon.numOfPoints]) continue;
-      tft.drawLine(points[i](0), points[i](1), points[(i + 1) % polygon.numOfPoints](0), points[(i + 1) % polygon.numOfPoints](1), color);
+      //TODO: MAKE NOT APPROXIMATION :)
+      else if (behind[i]){
+        tft.drawLine(points[i](0) - 2 * (points[i](0) - points[(i + 1) % polygon.numOfPoints](0)), TFT_HEIGHT - points[i](1), points[(i + 1) % polygon.numOfPoints](0), points[(i + 1) % polygon.numOfPoints](1), color);
+      }
+      else if (behind[(i + 1) % polygon.numOfPoints]){
+          tft.drawLine(points[i](0), points[i](1), points[(i + 1) % polygon.numOfPoints](0) + 2 * (points[i](0) - points[(i + 1) % polygon.numOfPoints](0)), TFT_HEIGHT - points[(i + 1) % polygon.numOfPoints](1), color);
+      }
+      // --------------------------------------------------------------
+      else tft.drawLine(points[i](0), points[i](1), points[(i + 1) % polygon.numOfPoints](0), points[(i + 1) % polygon.numOfPoints](1), color);
     }
   }
 };
