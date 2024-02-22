@@ -148,7 +148,7 @@ public:
       0, 0, 0, 1
     };
 
-    return rotateMatZ * rotateMatY * rotateMatX * translationMat;
+    return rotateMatX * rotateMatY * rotateMatZ * translationMat;
   }
 
   Matrix<4, 4> getOrthoMat(float width, float height) {
@@ -212,11 +212,11 @@ public:
 
     Matrix<4> points[polygon.numOfPoints];
     for (int i = 0; i < polygon.numOfPoints; i++) {
-      points[i] = { polygon.points[i](0),0,  polygon.points[i](1), 1 };
+      points[i] = { polygon.points[i](0), 0,  polygon.points[i](1), 1 };
       points[i] = objectToScreenMat * points[i];
 
       if (points[i](3) != 0)
-        points[i] /= points[i](3);
+        points[i] /= -abs(points[i](3));
       points[i](0) = (points[i](0) + 1) / 2;
       points[i](0) = points[i](0) * TFT_WIDTH;
       points[i](1) = (points[i](1) + 1) / 2;
@@ -224,6 +224,7 @@ public:
     }
 
     for (int i = 0; i < polygon.numOfPoints; i++){
+      if (points[i](2) < -1 && points[(i + 1) % polygon.numOfPoints](2) < -1) continue;
       tft.drawLine(points[i](0), points[i](1), points[(i + 1) % polygon.numOfPoints](0), points[(i + 1) % polygon.numOfPoints](1), color);
     }
   }
