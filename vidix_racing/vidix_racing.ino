@@ -42,7 +42,7 @@ void loop() {
   camera.drawObject(car, tft, ILI9341_WHITE);
   delay(40);
   camera.drawObject(car, tft, ILI9341_BLACK);
-
+  //camera.position= {car.position(0),car.position(1)+1,car.position(2)-2};
   //
 
   if (analogRead(PinTipkalo_U_D) > 4000) {
@@ -53,11 +53,11 @@ void loop() {
     car.position(2) -= 1;
   }
   if (analogRead(PinTipkalo_L_R) > 4000) {
-    car.position(0) += 1;
+    car.rotation(1) += 0.2;
   }
 
   else if (analogRead(PinTipkalo_L_R) > 1800 and analogRead(PinTipkalo_L_R) < 2000) {
-    car.position(0) -= 1;
+    car.rotation(1) -= 0.2;
   }
 }
 
