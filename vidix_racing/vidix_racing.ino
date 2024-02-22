@@ -49,8 +49,10 @@ void loop() {
   camera.position(1) += 5;
   camera.rotation(1) = car.rotation(1);
 
-  camera.drawPolygon(stazaInner, tft, ILI9341_BLUE);
-  camera.drawPolygon(stazaOuter, tft, ILI9341_BLUE);
+  if (stazaInner.inside({car.position(0), car.position(1)})) camera.drawPolygon(stazaInner, tft, ILI9341_RED);
+  else camera.drawPolygon(stazaInner, tft, ILI9341_BLUE);
+  if (stazaOuter.inside({car.position(0), car.position(1)})) camera.drawPolygon(stazaOuter, tft, ILI9341_RED);
+  else camera.drawPolygon(stazaOuter, tft, ILI9341_BLUE);
 
   camera.drawObject(car, tft, ILI9341_WHITE);
   delay(40);

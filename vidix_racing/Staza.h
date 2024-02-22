@@ -14,25 +14,25 @@ public:
   bool inside(Matrix<2> point) {
     float x = point(0);
     float y = point(1);
-    Matrix<2> infPoint = { point(0), 100000 };
-    bool inside = true;
+    bool inside = false;
 
     Matrix<2> p1 = points[0], p2;
     for (int i = 1; i <= numOfPoints; i++) {
       p2 = points[i % numOfPoints];
 
-      if (y > min(p1(2), p2(2))) {
-        if (y <= max(p1(2), p2(2))) {
-          if (x <= max(p1(1), p2(1))) {
-            float x_intersection = (y - p1(2)) * (p2(1) - p1(1)) / (p2(2) - p1(2)) + p1(1);
+      if (y > min(p1(1), p2(1))) {
+        if (y <= max(p1(1), p2(1))) {
+          if (x <= max(p1(0), p2(0))) {
+            float x_intersection = (y - p1(1)) * (p2(0) - p1(0)) / (p2(1) - p1(1)) + p1(0);
 
-            if (p1(1) == p2(1)
-                || x <= x_intersection) {
+            if (p1(0) == p2(0) || x <= x_intersection) {
               inside = !inside;
             }
           }
         }
       }
+
+      p1 = p2;
     }
 
     return inside;
