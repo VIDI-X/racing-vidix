@@ -21,7 +21,7 @@ class Object {
 
       position.Fill(0);
       rotation.Fill(0);
-      scale.Fill(0);
+      scale.Fill(1);
     }
 
     Object(int numOfVerts, Matrix<3> verteces[], int numOfTris, Matrix<3, 1, int> triangles[], Matrix<3> position, Matrix<3> rotation, Matrix<3> scale){
