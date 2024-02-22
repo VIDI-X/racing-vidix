@@ -1,6 +1,4 @@
-#include <Adafruit_ILI9341.h>
-#include <Adafruit_GFX.h>
-#include "Engine.h"
+#include "Primitives.h"
 
 int PinTipkalo_L_R = 34;
 int PinTipkalo_U_D = 35;
@@ -15,102 +13,66 @@ int PinTipkalo_MEN = 13;
 #define TFT_DC 21
 // stvaranje objekta ekrana koji će se zvati tft
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
-int menueoptions;
+int menuOptions;
 int start;
 
 //EXAMPLE
-int numOfVerts = 3, numOfTris = 1;
-Matrix<3> verteces[] = { { -10, -10, 0 }, {10, -10, 0}, {0, 10, 0} };
+Matrix<3> verteces[] = { { -1, -1, 0 }, { 1, -1, 0 }, { 0, 1, 0 } };
 Matrix<3, 1, int> triangles[] = { { 0, 1, 2 } };
-Matrix<2, 100, float> transformedVertices;
-Object triangle = Object(numOfVerts, verteces, numOfTris, triangles);
+Object triangle = Object(3, verteces, 1, triangles);
 Camera camera = Camera();
 //
 
 void setup() {
   Serial.begin(9600);
   pinsetup();
-  menuescreen();
-  menueoptions = 0;
+  menuScreen();
+  menuOptions = 0;
   start = 1;
 
+  //memcpy(&TRIANGLE, tri, sizeof(Object));
+
   //EXAMPLE
-  camera.position = {120, 160, 10};
+  camera.position = { 0, 0, -10 };
+  triangle.scale = { 9, 6, 1 };
   //
 }
 
 void loop() {
-  triangle.rotation(1) += 0.1;
-  triangle.position(0) = 10;
-  triangle.position(1) = 10;
-  //triangle.scale = (float)10;
-  menueselection();
+  menuselection();
   startpoint();
 
   //EXAMPLE
-  if (start == 1) {
-    // Matrix<3> verts[triangle.numOfVerts];
-    for (int i = 0; i < triangle.numOfVerts; i++) {
-      // Dobivanje pozicije vrha u svemirskoj koordinati
-      Matrix<4> verticeHomogeneous = { triangle.verteces[i](0), triangle.verteces[i](1), triangle.verteces[i](2), 1 };
-      Matrix<4> transformedVertice = triangle.getObjectToWorldMatrix() * verticeHomogeneous;
+  camera.drawObject(triangle, tft, ILI9341_WHITE);
+  delay(40);
+  camera.drawObject(triangle, tft, ILI9341_BLACK);
+  triangle.rotation(1) += 0.1;
+  //
 
-      // Primjena perspektivne transformacije
-      Matrix<4> projectedVertice = camera.getOrthoMat(tft.width(), tft.height()) * transformedVertice;
-
-      // Normalizacija koordinata
-      //projectedVertice /= projectedVertice(3);
-      projectedVertice *= (float)1000.0;
-
-
-      transformedVertices(0, i) = projectedVertice(0);
-      transformedVertices(1, i) = projectedVertice(1);
-
-      // Crtanje točke na ekranu
-      tft.drawPixel(projectedVertice(0), projectedVertice(1), ILI9341_BLUE);
-     
-      Serial.println(projectedVertice(0));
-      Serial.println(projectedVertice(1));
-      
-    }
-
-    tft.fillScreen(ILI9341_BLACK);
-
-tft.fillTriangle(transformedVertices(0,0), transformedVertices(1,0), transformedVertices(0,1), transformedVertices(1,1), transformedVertices(0,2), transformedVertices(1,2), ILI9341_WHITE);
-
-   
-
-
-
-    if (analogRead(PinTipkalo_U_D) > 4000) {
-      camera.position(2)++;
-    }
-
-    else if (analogRead(PinTipkalo_U_D) > 1800 and analogRead(PinTipkalo_U_D) < 2000) {
-     camera.position(2)--;
-    }
-if (analogRead(PinTipkalo_L_R) > 4000) {
-      camera.position(1)++;
-    }
-
-    else if (analogRead(PinTipkalo_L_R) > 1800 and analogRead(PinTipkalo_L_R) < 2000) {
-     camera.position(1)--;
-    }
-
+  if (analogRead(PinTipkalo_U_D) > 4000) {
+    camera.position(2) += 100;
   }
 
+  else if (analogRead(PinTipkalo_U_D) > 1800 and analogRead(PinTipkalo_U_D) < 2000) {
+    camera.position(2) -= 100;
+  }
+  if (analogRead(PinTipkalo_L_R) > 4000) {
+    camera.position(1) += 100;
+  }
 
-  //
+  else if (analogRead(PinTipkalo_L_R) > 1800 and analogRead(PinTipkalo_L_R) < 2000) {
+    camera.position(1) -= 100;
+  }
 }
 
-void menuescreen() {
+void menuScreen() {
   tft.begin();
   tft.setRotation(3);
   tft.fillScreen(ILI9341_BLACK);
   tft.setTextColor(ILI9341_WHITE);
 }
 
-void menueselection() {
+void menuselection() {
   if (start == 0) {
     tft.setCursor(65, 60);  // polozaj pocetka ispisa tekst
     tft.setTextSize(4);     // velicina teksta
@@ -120,20 +82,20 @@ void menueselection() {
     tft.setCursor(65, 180);
     tft.print("QUIT");
     if (analogRead(PinTipkalo_U_D) > 4000) {
-      menueoptions--;
-      if (menueoptions == 0) {
-        menueoptions = 2;
+      menuOptions--;
+      if (menuOptions == 0) {
+        menuOptions = 2;
       }
     }
 
     else if (analogRead(PinTipkalo_U_D) > 1900 and analogRead(PinTipkalo_U_D) < 2000) {
-      menueoptions++;
-      if (menueoptions == 3) {
-        menueoptions = 1;
+      menuOptions++;
+      if (menuOptions == 3) {
+        menuOptions = 1;
       }
     }
 
-    if (menueoptions == 1) {
+    if (menuOptions == 1) {
       tft.setTextColor(ILI9341_WHITE);
       tft.setCursor(65, 180);
       tft.print("QUIT");
@@ -143,7 +105,7 @@ void menueselection() {
       delay(500);
     }
 
-    else if (menueoptions == 2) {
+    else if (menuOptions == 2) {
       tft.setTextColor(ILI9341_WHITE);
       tft.setCursor(65, 120);
       tft.print("PLAY");
@@ -168,7 +130,7 @@ void pinsetup() {
 
 void startpoint() {
   if (start == 0) {
-    if ((digitalRead(PinTipkalo_A) == LOW) && (menueoptions == 1)) {
+    if ((digitalRead(PinTipkalo_A) == LOW) && (menuOptions == 1)) {
       start = 1;
       tft.fillScreen(ILI9341_BLACK);
     }
