@@ -17,7 +17,7 @@ int menuOptions;
 int start;
 
 //EXAMPLE
-Object triangle = Object(&CUBE);
+Object car = Object(&CUBE);
 Camera camera = Camera();
 //
 
@@ -29,8 +29,8 @@ void setup() {
   start = 1;
 
   //EXAMPLE
-  camera.position = { 0, 0, -10 };
-  triangle.scale = { 5, 5, 5 };
+  camera.position = { 0, 1, -5 };
+  car.scale = { 1, 1, 2 };
   //
 }
 
@@ -39,27 +39,25 @@ void loop() {
   startpoint();
 
   //EXAMPLE
-  camera.drawObject(triangle, tft, ILI9341_WHITE);
+  camera.drawObject(car, tft, ILI9341_WHITE);
   delay(40);
-  camera.drawObject(triangle, tft, ILI9341_BLACK);
-  triangle.rotation(0) += 0.1;
-  triangle.rotation(1) += 0.1;
-  triangle.rotation(2) += 0.1;
+  camera.drawObject(car, tft, ILI9341_BLACK);
+
   //
 
   if (analogRead(PinTipkalo_U_D) > 4000) {
-    camera.position(2) += 100;
+    car.position(2) += 1;
   }
 
   else if (analogRead(PinTipkalo_U_D) > 1800 and analogRead(PinTipkalo_U_D) < 2000) {
-    camera.position(2) -= 100;
+    car.position(2) -= 1;
   }
   if (analogRead(PinTipkalo_L_R) > 4000) {
-    camera.position(1) += 100;
+    car.position(0) += 1;
   }
 
   else if (analogRead(PinTipkalo_L_R) > 1800 and analogRead(PinTipkalo_L_R) < 2000) {
-    camera.position(1) -= 100;
+    car.position(0) -= 1;
   }
 }
 
