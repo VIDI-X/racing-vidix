@@ -29,7 +29,8 @@ void setup() {
   start = 1;
 
   //EXAMPLE
-  camera.position = { 0, 1, -5 };
+  camera.position = { 0, 5, -5 };
+  camera.rotation(0)=0.2;
   car.scale = { 1, 1, 2 };
   //
 }
@@ -38,14 +39,30 @@ void loop() {
   menuselection();
   startpoint();
 
-  //EXAMPLE
   camera.drawObject(car, tft, ILI9341_WHITE);
   delay(40);
   camera.drawObject(car, tft, ILI9341_BLACK);
-  //camera.position= {car.position(0),car.position(1)+1,car.position(2)-2};
+
+  //EXAMPLE
+  camera.drawPolygon(stazaInner, tft,ILI9341_BLUE);
+  camera.drawPolygon(stazaOuter, tft, ILI9341_BLUE);
+
+  camera.drawObject(car, tft, ILI9341_WHITE);
+  delay(40);
+  camera.drawObject(car, tft, ILI9341_BLACK);
+   camera.drawPolygon(stazaInner, tft,ILI9341_BLACK);
+  camera.drawPolygon(stazaOuter, tft, ILI9341_BLACK);
+
+
+ 
+  
   //
   Matrix<4> forward = {0, 0, 1, 0};
   forward = car.getObjectToWorldMatrix() * forward;
+
+
+   //camera.position= {forward(0),forward(1)+1,forward(2)-2};
+  //camera.rotation= {car.rotation(0),car.rotation(1),car.rotation(2)};
 
   if (analogRead(PinTipkalo_U_D) > 4000) {
     car.position(2) += forward(2);

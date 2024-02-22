@@ -212,7 +212,7 @@ public:
 
     Matrix<4> points[polygon.numOfPoints];
     for (int i = 0; i < polygon.numOfPoints; i++) {
-      points[i] = { polygon.points[i](0), polygon.points[i](1), 0, 1 };
+      points[i] = { polygon.points[i](0),0,  polygon.points[i](1), 1 };
       points[i] = objectToScreenMat * points[i];
 
       if (points[i](3) != 0)
