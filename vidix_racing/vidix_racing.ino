@@ -16,6 +16,21 @@ Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 int menuOptions;
 int start;
 
+
+// Constants for car movement
+const float accelerationRate = 0.1;   // Adjust as needed
+const float decelerationRate = 0.05;  // Adjust as needed
+float maxSpeed = 2;             // Maximum speed of the car
+const float turnRate = 0.01;          // Rate of turning
+
+// Variables to track car movement
+static float speed = 0.00000001;
+static float turnAngle = 0;
+
+
+
+
+
 //EXAMPLE
 Object car = Object(&CUBE);
 Camera camera = Camera();
@@ -40,19 +55,28 @@ void loop() {
   startpoint();
 
   Matrix<4> forward = { 0, 0, 1, 0 };
+  Serial.println(speed);
   forward = car.getObjectToWorldMatrix() * forward;
   float mag = sqrt(forward(0) * forward(0) + forward(1) * forward(1) + forward(2) * forward(2));
   forward /= mag;
 
-  Matrix<3> cameraOffset = {forward(0) * -5, forward(1) * -5, forward(2) * -5};
+  Matrix<3> cameraOffset = { forward(0) * -5, forward(1) * -5, forward(2) * -5 };
+  
   camera.position = car.position + cameraOffset;
   camera.position(1) += 5;
   camera.rotation(1) = car.rotation(1);
 
-  if (stazaInner.inside({car.position(0), car.position(2)})) camera.drawPolygon(stazaInner, tft, ILI9341_RED);
-  else camera.drawPolygon(stazaInner, tft, ILI9341_BLUE);
-  if (stazaOuter.inside({car.position(0), car.position(2)})) camera.drawPolygon(stazaOuter, tft, ILI9341_RED);
-  else camera.drawPolygon(stazaOuter, tft, ILI9341_BLUE);
+  forward *= speed;
+
+  if (stazaOuter.inside({ car.position(0), car.position(2) }) & !stazaInner.inside({ car.position(0), car.position(2) })) {
+    camera.drawPolygon(stazaOuter, tft, ILI9341_BLUE);
+    camera.drawPolygon(stazaInner, tft, ILI9341_BLUE);
+    maxSpeed=2;
+  } else {
+    camera.drawPolygon(stazaOuter, tft, ILI9341_RED);
+    camera.drawPolygon(stazaInner, tft, ILI9341_RED);
+    maxSpeed=0.75;
+  }
 
   camera.drawObject(car, tft, ILI9341_WHITE);
   delay(40);
@@ -61,20 +85,32 @@ void loop() {
   camera.drawPolygon(stazaOuter, tft, ILI9341_BLACK);
 
   if (digitalRead(PinTipkalo_A) == LOW) {
-    car.position(2) += forward(2);
-    car.position(1) += forward(1);
-    car.position(0) += forward(0);
+
+    speed += accelerationRate;
+    if (speed > maxSpeed) {
+      speed -= accelerationRate*2;
+    }
+  } else {
+    speed -= decelerationRate;
+    if (speed < 0) {
+      speed = 0.00000001;
+    }
   }
+
+  car.position(2) += forward(2);
+  car.position(1) += forward(1);
+  car.position(0) += forward(0);
+
   if (digitalRead(PinTipkalo_B) == LOW) {
-    car.position(2) -= forward(2);
-    car.position(1) -= forward(1);
-    car.position(0) -= forward(0);
+    speed -= decelerationRate * 1.5;
+    if (speed < 0) {
+      speed = 0.00000001;
+    }
   }
 
   if (analogRead(PinTipkalo_L_R) > 4000) {
     car.rotation(1) += 0.2;
-  }
-  else if (analogRead(PinTipkalo_L_R) > 1800 and analogRead(PinTipkalo_L_R) < 2000) {
+  } else if (analogRead(PinTipkalo_L_R) > 1800 and analogRead(PinTipkalo_L_R) < 2000) {
     car.rotation(1) -= 0.2;
   }
 }
