@@ -91,6 +91,87 @@ public:
 };
 
 class Camera {
+private:
+  Matrix<4> farTopLeft, farTopRight, farBottomLeft, farBottomRight;
+  Matrix<4> nearTopLeft, nearTopRight, nearBottomLeft, nearBottomRight;
+
+  Matrix<4> leftPlaneNormal, topPlaneNormal, rightPlaneNormal, bottomPlaneNormal;
+
+  Matrix<4> nearPlane, farPlane, leftPlane, topPlane, rightPlane, bottomPlane;
+
+  void calculateFrustum() {
+    Matrix<4> right = { 1, 0, 0, 0 };
+    Matrix<4> up = { 0, 1, 0, 0 };
+    Matrix<4> forward = { 0, 0, 1, 0 };
+    Matrix<4> nearCenter = forward * znear;
+    Matrix<4> farCenter = forward * zfar;
+    float nearHeightHalf = tan(fov / 2) * znear;
+    float farHeightHalf = tan(fov / 2) * zfar;
+    float nearWidthHalf = nearHeightHalf * aspect;
+    float farWidthHalf = farHeightHalf * aspect;
+
+    farTopLeft = farCenter + up * farHeightHalf - right * farWidthHalf;
+    farTopRight = farCenter + up * farHeightHalf + right * farWidthHalf;
+    farBottomLeft = farCenter - up * farHeightHalf - right * farWidthHalf;
+    farBottomRight = farCenter - up * farHeightHalf + right * farWidthHalf;
+
+    nearTopLeft = nearCenter + up * nearHeightHalf - right * nearWidthHalf;
+    nearTopRight = nearCenter + up * nearHeightHalf + right * nearWidthHalf;
+    nearBottomLeft = nearCenter - up * nearHeightHalf - right * nearWidthHalf;
+    nearBottomRight = nearCenter - up * nearHeightHalf + right * nearWidthHalf;
+
+    Matrix<4> p0, p1, p2;
+
+    p0 = nearBottomLeft;
+    p1 = farBottomLeft;
+    p2 = farTopLeft;
+    leftPlane = PlaneEquation(p0, p1, p2);
+    leftPlaneNormal = Normalize(Cross(Normalize(p1 - p0), Normalize(p2 - p1)));
+
+    p0 = nearTopLeft;
+    p1 = farTopLeft;
+    p2 = farTopRight;
+    topPlane = PlaneEquation(p0, p1, p2);
+    topPlaneNormal = Normalize(Cross(Normalize(p1 - p0), Normalize(p2 - p1)));
+
+    p0 = nearTopRight;
+    p1 = farTopRight;
+    p2 = farBottomRight;
+    rightPlane = PlaneEquation(p0, p1, p2);
+    rightPlaneNormal = Normalize(Cross(Normalize(p1 - p0), Normalize(p2 - p1)));
+
+    p0 = nearBottomRight;
+    p1 = farBottomRight;
+    p2 = farBottomLeft;
+    bottomPlane = PlaneEquation(p0, p1, p2);
+    bottomPlaneNormal = Normalize(Cross(Normalize(p1 - p0), Normalize(p2 - p1)));
+
+    p0 = nearBottomRight;
+    p1 = nearTopRight;
+    p2 = nearTopLeft;
+    nearPlane = PlaneEquation(p0, p1, p2);
+
+    p0 = farBottomRight;
+    p1 = farTopRight;
+    p2 = farTopLeft;
+    farPlane = PlaneEquation(p0, p1, p2);
+  }
+
+  int insideFrustum(Matrix<4> &point) {
+    //if (-point(2) < znear) return 1;
+    //if (-point(2) > zfar) return 2;
+    float left = max((float)0, Dot(Normalize(point), leftPlaneNormal));
+    float top = max((float)0, Dot(Normalize(point), topPlaneNormal));
+    float right = max((float)0, Dot(Normalize(point), rightPlaneNormal));
+    float bottom = max((float)0, Dot(Normalize(point), bottomPlaneNormal));
+    if (left <= 0.001 && top <= 0.001 && right <= 0.001 && bottom <= 0.001) return 0;
+
+    if (left >= top && left >= right && left >= bottom) return 3;
+    if (top >= left && top >= right && top >= bottom) return 4;
+    if (right >= top && right >= left && right >= bottom) return 5;
+    return 6;
+  }
+
 public:
   Matrix<3> position;
   Matrix<3> rotation;
@@ -104,6 +185,8 @@ public:
     znear = 0.1;
     zfar = 1000;
     fov = PI / 2;
+
+    calculateFrustum();
   }
 
   Camera(Matrix<3> position, Matrix<3> rotation) {
@@ -112,6 +195,8 @@ public:
     znear = 0.1;
     zfar = 1000;
     fov = PI / 2;
+
+    calculateFrustum();
   }
 
   Camera(Matrix<3> position, Matrix<3> rotation, float znear, float zfar, float fov) {
@@ -120,6 +205,8 @@ public:
     this->znear = znear;
     this->zfar = zfar;
     this->fov = fov;
+
+    calculateFrustum();
   }
 
   Matrix<4, 4> getWorldToViewMat() {
@@ -163,12 +250,11 @@ public:
   }
 
   Matrix<4, 4> getPerspectiveMat() {
-    float fovY = fov;
-    float fovX = aspect * fov;
+    float c = 1 / tan(fov / 2);
 
     Matrix<4, 4> perspective = {
-      1 / tan(fovX / 2), 0, 0, 0,
-      0, 1 / tan(fovY / 2), 0, 0,
+      c / aspect, 0, 0, 0,
+      0, c, 0, 0,
       0, 0, -(zfar + znear) / (zfar - znear), -2 * (zfar * znear) / (zfar - znear),
       0, 0, -1, 0
     };
@@ -207,38 +293,86 @@ public:
   void drawPolygon(Polygon &polygon, Adafruit_ILI9341 &tft, int color) {
     Matrix<4, 4> worldToViewMat = getWorldToViewMat();
     Matrix<4, 4> perspectiveMat = getPerspectiveMat();
-    Matrix<4, 4> worldToScreenMat = perspectiveMat * worldToViewMat;
 
     Matrix<4> points[polygon.numOfPoints];
-    bool behind[polygon.numOfPoints];
+    int outside[polygon.numOfPoints];
+
     for (int i = 0; i < polygon.numOfPoints; i++) {
-      behind[i] = false;
       points[i] = { polygon.points[i](0), 0, polygon.points[i](1), 1 };
       points[i] = worldToViewMat * points[i];
-      if (points[i](2) < znear) behind[i] = true;
-      points[i] = perspectiveMat * points[i];
-
-      if (points[i](3) != 0) {
-        points[i](0) /= (points[i](3));
-        points[i](1) /= (points[i](3));
-      }
-      points[i](0) = (points[i](0) + 1) / 2;
-      points[i](0) = points[i](0) * TFT_WIDTH;
-      points[i](1) = (points[i](1) + 1) / 2;
-      points[i](1) = points[i](1) * TFT_HEIGHT;
+      outside[i] = insideFrustum(points[i]);
     }
 
     for (int i = 0; i < polygon.numOfPoints; i++) {
-      if (behind[i] && behind[(i + 1) % polygon.numOfPoints]) continue;
-      //TODO: MAKE NOT APPROXIMATION :)
-      else if (behind[i]){
-        tft.drawLine(points[i](0) - 2 * (points[i](0) - points[(i + 1) % polygon.numOfPoints](0)), TFT_HEIGHT - points[i](1), points[(i + 1) % polygon.numOfPoints](0), points[(i + 1) % polygon.numOfPoints](1), color);
+      Matrix<4> p1 = { points[i](0), points[i](1), points[i](2), points[i](3) };
+      Matrix<4> p2 = { points[(i + 1) % polygon.numOfPoints](0), points[(i + 1) % polygon.numOfPoints](1), points[(i + 1) % polygon.numOfPoints](2), points[(i + 1) % polygon.numOfPoints](3) };
+
+      if (outside[i] && outside[(i + 1) % polygon.numOfPoints]) continue;
+      else if (outside[i]) {
+        switch (outside[i]) {
+          case 1:
+            p1 = GetIntersection(nearPlane, p1, p2);
+            break;
+          case 2:
+            p1 = GetIntersection(farPlane, p1, p2);
+            break;
+          case 3:
+            p1 = GetIntersection(leftPlane, p1, p2);
+            break;
+          case 4:
+            p1 = GetIntersection(topPlane, p1, p2);
+            break;
+          case 5:
+            p1 = GetIntersection(rightPlane, p1, p2);
+            break;
+          case 6:
+            p1 = GetIntersection(bottomPlane, p1, p2);
+            break;
+        }
+      } else if (outside[(i + 1) % polygon.numOfPoints]) {
+        switch (outside[(i + 1) % polygon.numOfPoints]) {
+          case 1:
+            p2 = GetIntersection(nearPlane, p1, p2);
+            break;
+          case 2:
+            p2 = GetIntersection(farPlane, p1, p2);
+            break;
+          case 3:
+            p2 = GetIntersection(leftPlane, p1, p2);
+            break;
+          case 4:
+            p2 = GetIntersection(topPlane, p1, p2);
+            break;
+          case 5:
+            p2 = GetIntersection(rightPlane, p1, p2);
+            break;
+          case 6:
+            p2 = GetIntersection(bottomPlane, p1, p2);
+            break;
+        }
       }
-      else if (behind[(i + 1) % polygon.numOfPoints]){
-          tft.drawLine(points[i](0), points[i](1), points[(i + 1) % polygon.numOfPoints](0) + 2 * (points[i](0) - points[(i + 1) % polygon.numOfPoints](0)), TFT_HEIGHT - points[(i + 1) % polygon.numOfPoints](1), color);
+
+      p1 = perspectiveMat * p1;
+      p2 = perspectiveMat * p2;
+
+      if (p1(3) != 0) {
+        p1(0) /= (p1(3));
+        p1(1) /= (p1(3));
       }
-      // --------------------------------------------------------------
-      else tft.drawLine(points[i](0), points[i](1), points[(i + 1) % polygon.numOfPoints](0), points[(i + 1) % polygon.numOfPoints](1), color);
+      p1(0) = (p1(0) + 1) / 2;
+      p1(0) = p1(0) * TFT_WIDTH;
+      p1(1) = (p1(1) + 1) / 2;
+      p1(1) = p1(1) * TFT_HEIGHT;
+      if (p2(3) != 0) {
+        p2(0) /= (p2(3));
+        p2(1) /= (p2(3));
+      }
+      p2(0) = (p2(0) + 1) / 2;
+      p2(0) = p2(0) * TFT_WIDTH;
+      p2(1) = (p2(1) + 1) / 2;
+      p2(1) = p2(1) * TFT_HEIGHT;
+
+      tft.drawLine(p1(0), p1(1), p2(0), p2(1), color);
     }
   }
 };

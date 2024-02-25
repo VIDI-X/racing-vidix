@@ -1,5 +1,4 @@
-#include <BasicLinearAlgebra.h>
-using namespace BLA;
+#include "Helpers.h"
 
 class Polygon {
 public:

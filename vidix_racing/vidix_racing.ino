@@ -55,10 +55,10 @@ void loop() {
   startpoint();
 
   Matrix<4> forward = { 0, 0, 1, 0 };
-  Serial.println(speed);
-  forward = car.getObjectToWorldMatrix() * forward;
-  float mag = sqrt(forward(0) * forward(0) + forward(1) * forward(1) + forward(2) * forward(2));
-  forward /= mag;
+  //Serial.println(speed);
+  forward = Normalize(car.getObjectToWorldMatrix() * forward);
+  //float mag = sqrt(forward(0) * forward(0) + forward(1) * forward(1) + forward(2) * forward(2));
+  //forward /= mag;
 
   Matrix<3> cameraOffset = { forward(0) * -5, forward(1) * -5, forward(2) * -5 };
   
