@@ -41,21 +41,23 @@ void setup() {
   pinsetup();
   menuScreen();
   menuOptions = 0;
-  start = 1;
-
+  start = 0;
   //EXAMPLE
-  camera.position = { 0, 5, -5 };
+  camera.position = { 0, 5, -1 };
   camera.rotation(0) = 0.5;
-
-
   car.scale = { 1, 1, 2 };
+  car.position= {-10,0,-10 } ;
+  car.rotation(1)=1.3;
   //
 }
 
 void loop() {
+
+  if (start==0){
   menuselection();
   startpoint();
-
+  }
+  else{
   Matrix<4> forward = { 0, 0, 1, 0 };
   //Serial.println(speed);
   forward = Normalize(car.getObjectToWorldMatrix() * forward);
@@ -115,59 +117,99 @@ void loop() {
   } else if (analogRead(PinTipkalo_L_R) > 1800 and analogRead(PinTipkalo_L_R) < 2000) {
     car.rotation(1) -= turnRate*speed;
   }
+
+
+  }
 }
+
+
+
+
+
+
+
+
 
 void menuScreen() {
   tft.begin();
   tft.setRotation(3);
   tft.fillScreen(ILI9341_BLACK);
   tft.setTextColor(ILI9341_WHITE);
+   tft.setTextSize(3);
 }
+
+
+
+
 
 void menuselection() {
   if (start == 0) {
-    tft.setCursor(65, 60);  // polozaj pocetka ispisa tekst
-    tft.setTextSize(4);     // velicina teksta
+    tft.setTextColor(ILI9341_WHITE);
+    tft.setCursor(65, TFT_WIDTH/6);  // polozaj pocetka ispisa tekst
+      // velicina teksta
     tft.print("WELLCOME");
-    tft.setCursor(65, 120);
+    tft.setCursor(65, TFT_WIDTH/6*2);
     tft.print("PLAY");
-    tft.setCursor(65, 180);
+    tft.setCursor(65, TFT_WIDTH/6*3);
+    tft.print("MULTIPLAYER");
+    tft.setCursor(65, TFT_WIDTH/6*4);
     tft.print("QUIT");
     if (analogRead(PinTipkalo_U_D) > 4000) {
       menuOptions--;
       if (menuOptions == 0) {
-        menuOptions = 2;
+        menuOptions = 3;
       }
     }
 
     else if (analogRead(PinTipkalo_U_D) > 1900 and analogRead(PinTipkalo_U_D) < 2000) {
       menuOptions++;
-      if (menuOptions == 3) {
+      if (menuOptions == 4) {
         menuOptions = 1;
       }
     }
 
     if (menuOptions == 1) {
       tft.setTextColor(ILI9341_WHITE);
-      tft.setCursor(65, 180);
+      tft.setCursor(65, TFT_WIDTH/6*4); 
       tft.print("QUIT");
+      tft.setCursor(65, TFT_WIDTH/6*3); 
+      tft.print("MULTIPLAYER");
       tft.setTextColor(ILI9341_BLUE);
-      tft.setCursor(65, 120);
+      tft.setCursor(65, TFT_WIDTH/6*2); 
       tft.print("PLAY");
       delay(500);
     }
 
     else if (menuOptions == 2) {
       tft.setTextColor(ILI9341_WHITE);
-      tft.setCursor(65, 120);
+      tft.setCursor(65, TFT_WIDTH/6*2); 
       tft.print("PLAY");
+      tft.setCursor(65, TFT_WIDTH/6*4); 
+      tft.print("QUIT");
       tft.setTextColor(ILI9341_BLUE);
-      tft.setCursor(65, 180);
+      tft.setCursor(65, TFT_WIDTH/6*3); 
+      tft.print("MULTIPLAYER");
+      delay(500);
+    }
+
+
+    else if (menuOptions == 3) {
+      tft.setTextColor(ILI9341_WHITE);
+      tft.setCursor(65, TFT_WIDTH/6*2); 
+      tft.print("PLAY");
+      tft.setCursor(65, TFT_WIDTH/6*3); 
+      tft.print("MULTIPLAYER");
+      tft.setTextColor(ILI9341_BLUE);
+      tft.setCursor(65, TFT_WIDTH/6*4); 
       tft.print("QUIT");
       delay(500);
     }
+
   }
 }
+
+
+
 
 void pinsetup() {
   pinMode(PinTipkalo_L_R, INPUT_PULLUP);
@@ -179,6 +221,9 @@ void pinsetup() {
   pinMode(PinTipkalo_ST, INPUT_PULLUP);
   pinMode(PinTipkalo_MEN, INPUT_PULLUP);
 }
+
+
+
 
 void startpoint() {
   if (start == 0) {
