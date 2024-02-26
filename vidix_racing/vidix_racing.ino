@@ -21,7 +21,7 @@ int start;
 const float accelerationRate = 0.1;   // Adjust as needed
 const float decelerationRate = 0.05;  // Adjust as needed
 float maxSpeed = 2;             // Maximum speed of the car
-const float turnRate = 0.01;          // Rate of turning
+const float turnRate = 0.05;          // Rate of turning
 
 // Variables to track car movement
 static float speed = 0.00000001;
@@ -46,6 +46,8 @@ void setup() {
   //EXAMPLE
   camera.position = { 0, 5, -5 };
   camera.rotation(0) = 0.5;
+
+
   car.scale = { 1, 1, 2 };
   //
 }
@@ -104,14 +106,14 @@ void loop() {
   if (digitalRead(PinTipkalo_B) == LOW) {
     speed -= decelerationRate * 1.5;
     if (speed < 0) {
-      speed = 0.00000001;
+      speed = 0;
     }
   }
 
   if (analogRead(PinTipkalo_L_R) > 4000) {
-    car.rotation(1) += 0.2;
+    car.rotation(1) += turnRate*speed;
   } else if (analogRead(PinTipkalo_L_R) > 1800 and analogRead(PinTipkalo_L_R) < 2000) {
-    car.rotation(1) -= 0.2;
+    car.rotation(1) -= turnRate*speed;
   }
 }
 
