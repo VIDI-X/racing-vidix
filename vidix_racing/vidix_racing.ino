@@ -1,7 +1,50 @@
 #include "Primitives.h"
 
-#include "WiFi.h"
-#include "AsyncUDP.h"
+#include <esp_now.h>
+#include <WiFi.h>
+
+uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
+float x_coord = 30;
+float y_coord = 31;
+float rotation = 32;
+
+// dolazne vrijednosti od drugog igraca
+float ulazni_x_coord;
+float ulazni_y_coord;
+float ulazni_rotacija;
+
+// pomocna varijabla, debug
+String success;
+
+typedef struct struct_message {
+    float x_coord;
+    float y_coord;
+    float rotation;
+} struct_message;
+
+struct_message coords;
+
+struct_message incomingReadings;
+
+esp_now_peer_info_t peerInfo;
+
+void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+  //Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail"); //debug
+}
+
+// Callback when data is received
+void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
+  memcpy(&incomingReadings, incomingData, sizeof(incomingReadings));
+  //Serial.print("Bytes received: ");
+  //Serial.println(len);
+  ulazni_x_coord = incomingReadings.x_coord;
+  ulazni_y_coord = incomingReadings.y_coord;
+  ulazni_rotacija = incomingReadings.rotation;
+}
+
+
+
 
 int PinTipkalo_L_R = 34;
 int PinTipkalo_U_D = 35;
@@ -43,11 +86,11 @@ Camera camera = Camera();
 
 void setup() {
 
-  Serial.begin(9600);
+  Serial.begin(115200);
   pinsetup();
   menuScreen();
   menuOptions = 0;
-  startSP = 1;
+  startSP = 0;
   //EXAMPLE
   camera.position = { 0, 5, -1 };
   camera.rotation(0) = 0.5;
@@ -71,7 +114,29 @@ void setup() {
   krosnja.position = { -35, 0, -15 };
 
 
-  //
+  WiFi.mode(WIFI_STA);
+
+  Serial.println(WiFi.macAddress());
+
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
+
+  esp_now_register_send_cb(OnDataSent);
+  
+  // Register peer
+  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+  peerInfo.channel = 0;  
+  peerInfo.encrypt = false;
+  
+  // dodavanje protivnika    
+  if (esp_now_add_peer(&peerInfo) != ESP_OK){
+    Serial.println("Failed to add peer");
+    return;
+  }
+  // funkcija koja se poziva kada dođu novi podatci
+  esp_now_register_recv_cb(OnDataRecv);
 }
 
 void loop() {
@@ -147,6 +212,14 @@ void loop() {
     } else if (analogRead(PinTipkalo_L_R) > 1800 and analogRead(PinTipkalo_L_R) < 2000) {
       car.rotation(1) -= turnRate * speed;
     }
+
+    //posalji svoje koordinate
+    send_my_pos(car.position(2), car.position(0), car.rotation(1));
+
+    //primjeni promjene na neprijatelju
+    car2.position(2) = ulazni_x_coord;
+    car2.position(0) = ulazni_y_coord;
+    car2.rotation(1) = ulazni_rotacija;
   }
 }
 
@@ -255,4 +328,14 @@ void startpoint() {
       tft.fillScreen(ILI9341_BLACK);
     }
   }
+}
+
+
+void send_my_pos(float x_coord, float y_coord, float rotation){
+  coords.x_coord = x_coord;
+  coords.y_coord = y_coord;
+  coords.rotation = rotation;
+
+  // Send message via ESP-NOW
+  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &coords, sizeof(coords));
 }
