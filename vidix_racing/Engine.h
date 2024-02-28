@@ -9,8 +9,8 @@ class Object {
 public:
   int numOfVerts;
   Matrix<3> *verteces;
-  int numOfTris;
-  Matrix<3, 1, int> *triangles;
+  int numOfLines;
+  Matrix<2, 1, int> *lines;
 
   Matrix<3> position;
   Matrix<3> rotation;
@@ -22,32 +22,32 @@ public:
     for (int i = 0; i < this->numOfVerts; i++) {
       this->verteces[i] = other->verteces[i];
     }
-    this->numOfTris = other->numOfTris;
-    this->triangles = (Matrix<3, 1, int> *)malloc(this->numOfTris * sizeof(Matrix<3, 1, int>));
-    for (int i = 0; i < this->numOfTris; i++) {
-      this->triangles[i] = other->triangles[i];
+    this->numOfLines = other->numOfLines;
+    this->lines = (Matrix<2, 1, int> *)malloc(this->numOfLines * sizeof(Matrix<2, 1, int>));
+    for (int i = 0; i < this->numOfLines; i++) {
+      this->lines[i] = other->lines[i];
     }
     this->position = other->position;
     this->rotation = other->rotation;
     this->scale = other->scale;
   }
 
-  Object(int numOfVerts, Matrix<3> verteces[], int numOfTris, Matrix<3, 1, int> triangles[]) {
+  Object(int numOfVerts, Matrix<3> verteces[], int numOfLines, Matrix<2, 1, int> lines[]) {
     this->numOfVerts = numOfVerts;
     this->verteces = verteces;
-    this->numOfTris = numOfTris;
-    this->triangles = triangles;
+    this->numOfLines = numOfLines;
+    this->lines = lines;
 
     position.Fill(0);
     rotation.Fill(0);
     scale.Fill(1);
   }
 
-  Object(int numOfVerts, Matrix<3> verteces[], int numOfTris, Matrix<3, 1, int> triangles[], Matrix<3> position, Matrix<3> rotation, Matrix<3> scale) {
+  Object(int numOfVerts, Matrix<3> verteces[], int numOfLines, Matrix<2, 1, int> lines[], Matrix<3> position, Matrix<3> rotation, Matrix<3> scale) {
     this->numOfVerts = numOfVerts;
     this->verteces = verteces;
-    this->numOfTris = numOfTris;
-    this->triangles = triangles;
+    this->numOfLines = numOfLines;
+    this->lines = lines;
 
     this->position = position;
     this->rotation = rotation;
@@ -172,6 +172,75 @@ private:
     return 6;
   }
 
+  void drawLine(Matrix<4> &p1, Matrix<4> &p2, int out1, int out2, Matrix<4, 4> &perspectiveMat, Adafruit_ILI9341 &tft, int color){
+    if (out1 && out2) return;
+      else if (out1) {
+        switch (out1) {
+          case 1:
+            p1 = GetIntersection(nearPlane, p1, p2);
+            break;
+          case 2:
+            p1 = GetIntersection(farPlane, p1, p2);
+            break;
+          case 3:
+            p1 = GetIntersection(leftPlane, p1, p2);
+            break;
+          case 4:
+            p1 = GetIntersection(topPlane, p1, p2);
+            break;
+          case 5:
+            p1 = GetIntersection(rightPlane, p1, p2);
+            break;
+          case 6:
+            p1 = GetIntersection(bottomPlane, p1, p2);
+            break;
+        }
+      } else if (out2) {
+        switch (out2) {
+          case 1:
+            p2 = GetIntersection(nearPlane, p1, p2);
+            break;
+          case 2:
+            p2 = GetIntersection(farPlane, p1, p2);
+            break;
+          case 3:
+            p2 = GetIntersection(leftPlane, p1, p2);
+            break;
+          case 4:
+            p2 = GetIntersection(topPlane, p1, p2);
+            break;
+          case 5:
+            p2 = GetIntersection(rightPlane, p1, p2);
+            break;
+          case 6:
+            p2 = GetIntersection(bottomPlane, p1, p2);
+            break;
+        }
+      }
+
+      p1 = perspectiveMat * p1;
+      p2 = perspectiveMat * p2;
+
+      if (p1(3) != 0) {
+        p1(0) /= (p1(3));
+        p1(1) /= (p1(3));
+      }
+      p1(0) = (p1(0) + 1) / 2;
+      p1(0) = p1(0) * TFT_WIDTH;
+      p1(1) = (p1(1) + 1) / 2;
+      p1(1) = p1(1) * TFT_HEIGHT;
+      if (p2(3) != 0) {
+        p2(0) /= (p2(3));
+        p2(1) /= (p2(3));
+      }
+      p2(0) = (p2(0) + 1) / 2;
+      p2(0) = p2(0) * TFT_WIDTH;
+      p2(1) = (p2(1) + 1) / 2;
+      p2(1) = p2(1) * TFT_HEIGHT;
+
+      tft.drawLine(p1(0), p1(1), p2(0), p2(1), color);
+  }
+
 public:
   Matrix<3> position;
   Matrix<3> rotation;
@@ -266,27 +335,24 @@ public:
     Matrix<4, 4> objectToWorldMat = object.getObjectToWorldMatrix();
     Matrix<4, 4> worldToViewMat = getWorldToViewMat();
     Matrix<4, 4> perspectiveMat = getPerspectiveMat();
-    Matrix<4, 4> objectToScreenMat = perspectiveMat * worldToViewMat * objectToWorldMat;
+    Matrix<4, 4> objectToViewMat = worldToViewMat * objectToWorldMat;
 
     Matrix<4> verteces[object.numOfVerts];
+    int outside[object.numOfLines];
+
     for (int i = 0; i < object.numOfVerts; i++) {
       verteces[i] = { object.verteces[i](0), object.verteces[i](1), object.verteces[i](2), 1 };
-      verteces[i] = objectToScreenMat * verteces[i];
-
-      if (verteces[i](3) != 0)
-        verteces[i] /= verteces[i](3);
-      verteces[i](0) = (verteces[i](0) + 1) / 2;
-      verteces[i](0) = verteces[i](0) * TFT_WIDTH;
-      verteces[i](1) = (verteces[i](1) + 1) / 2;
-      verteces[i](1) = (verteces[i](1) * TFT_HEIGHT);
+      verteces[i] = objectToViewMat * verteces[i];
+      outside[i] = insideFrustum(verteces[i]);
     }
 
-    for (int i = 0; i < object.numOfTris; i++) {
-      tft.drawTriangle(
-        verteces[object.triangles[i](0)](0), verteces[object.triangles[i](0)](1),
-        verteces[object.triangles[i](1)](0), verteces[object.triangles[i](1)](1),
-        verteces[object.triangles[i](2)](0), verteces[object.triangles[i](2)](1),
-        color);
+    for (int i = 0; i < object.numOfLines; i++) {
+      Matrix<4> p1 = verteces[object.lines[i](0)];
+      Matrix<4> p2 = verteces[object.lines[i](1)];
+      int out1 = outside[object.lines[i](0)];
+      int out2 = outside[object.lines[i](1)];
+
+      drawLine(p1, p2, out1, out2, perspectiveMat, tft, color);
     }
   }
 
@@ -307,72 +373,7 @@ public:
       Matrix<4> p1 = { points[i](0), points[i](1), points[i](2), points[i](3) };
       Matrix<4> p2 = { points[(i + 1) % polygon.numOfPoints](0), points[(i + 1) % polygon.numOfPoints](1), points[(i + 1) % polygon.numOfPoints](2), points[(i + 1) % polygon.numOfPoints](3) };
 
-      if (outside[i] && outside[(i + 1) % polygon.numOfPoints]) continue;
-      else if (outside[i]) {
-        switch (outside[i]) {
-          case 1:
-            p1 = GetIntersection(nearPlane, p1, p2);
-            break;
-          case 2:
-            p1 = GetIntersection(farPlane, p1, p2);
-            break;
-          case 3:
-            p1 = GetIntersection(leftPlane, p1, p2);
-            break;
-          case 4:
-            p1 = GetIntersection(topPlane, p1, p2);
-            break;
-          case 5:
-            p1 = GetIntersection(rightPlane, p1, p2);
-            break;
-          case 6:
-            p1 = GetIntersection(bottomPlane, p1, p2);
-            break;
-        }
-      } else if (outside[(i + 1) % polygon.numOfPoints]) {
-        switch (outside[(i + 1) % polygon.numOfPoints]) {
-          case 1:
-            p2 = GetIntersection(nearPlane, p1, p2);
-            break;
-          case 2:
-            p2 = GetIntersection(farPlane, p1, p2);
-            break;
-          case 3:
-            p2 = GetIntersection(leftPlane, p1, p2);
-            break;
-          case 4:
-            p2 = GetIntersection(topPlane, p1, p2);
-            break;
-          case 5:
-            p2 = GetIntersection(rightPlane, p1, p2);
-            break;
-          case 6:
-            p2 = GetIntersection(bottomPlane, p1, p2);
-            break;
-        }
-      }
-
-      p1 = perspectiveMat * p1;
-      p2 = perspectiveMat * p2;
-
-      if (p1(3) != 0) {
-        p1(0) /= (p1(3));
-        p1(1) /= (p1(3));
-      }
-      p1(0) = (p1(0) + 1) / 2;
-      p1(0) = p1(0) * TFT_WIDTH;
-      p1(1) = (p1(1) + 1) / 2;
-      p1(1) = p1(1) * TFT_HEIGHT;
-      if (p2(3) != 0) {
-        p2(0) /= (p2(3));
-        p2(1) /= (p2(3));
-      }
-      p2(0) = (p2(0) + 1) / 2;
-      p2(0) = p2(0) * TFT_WIDTH;
-      p2(1) = (p2(1) + 1) / 2;
-      p2(1) = p2(1) * TFT_HEIGHT;
-
-      tft.drawLine(p1(0), p1(1), p2(0), p2(1), color);
+      drawLine(p1, p2, outside[i], outside[(i + 1) % polygon.numOfPoints], perspectiveMat, tft, color);
     }
   }
 };
