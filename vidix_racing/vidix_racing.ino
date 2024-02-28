@@ -38,6 +38,7 @@ Object deblo = Object(&DEBLO);
 Object krosnja = Object(&KROSNJA);
 Object car = Object(&CUBE);
 Object car2 = Object(&CUBE);
+Object start = Object(&START);
 
 Camera camera = Camera();
 
@@ -60,10 +61,9 @@ void setup() {
   car2.position = { -5, 0, -10 };
   car2.rotation(1) = 1.3;
 
-
-
-
-
+  start.scale.Fill((float)0.875);
+  start.position = {0, 0, -6};
+  start.rotation = {0, 3 * PI / 2, 0};
 
   deblo.scale = { 1, 1, 1 };
   deblo.position = { -35, 0, -15 };
@@ -109,11 +109,13 @@ void loop() {
     //camera.drawObject(krosnja, tft, ILI9341_GREEN);
     camera.drawObject(car, tft, ILI9341_WHITE);
     camera.drawObject(car2, tft, ILI9341_WHITE);
+    camera.drawObject(start, tft, ILI9341_WHITE);
     delay(40);
     //camera.drawObject(deblo, tft, ILI9341_BLACK);
     //camera.drawObject(krosnja, tft, ILI9341_BLACK);
     camera.drawObject(car, tft, ILI9341_BLACK);
     camera.drawObject(car2, tft, ILI9341_BLACK);
+    camera.drawObject(start, tft, ILI9341_BLACK);
 
     camera.drawPolygon(stazaInner, tft, ILI9341_BLACK);
     camera.drawPolygon(stazaOuter, tft, ILI9341_BLACK);
