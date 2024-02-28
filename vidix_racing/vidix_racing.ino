@@ -232,7 +232,7 @@ void loop() {
       if(millis() > 30000) startSP = 2;
     }
     
-    Serial.println();
+    //Serial.println();
 
     if (digitalRead(PinTipkalo_B) == LOW) {
       speed -= decelerationRate * 1.5;
@@ -273,16 +273,21 @@ void loop() {
       tft.setTextColor(ILI9341_RED);
       tft.print("IZGUBIO SI! :(");
     }
-    for(;;);
+
+    tft.setCursor(10, 10);     
+    if(total_odo > ulazni_total_odo && ulazni_total_odo != -1){
+      tft.print("1st");
+    }else{
+      tft.print("2nd");
+    }
+
+    tft.setTextSize(2);
+    tft.setCursor(10, 220); 
+    tft.print("Drzi START za rematch");
+    while(digitalRead(PinTipkalo_ST) == HIGH);
+    ESP.restart();
   }
 }
-
-
-
-
-
-
-
 
 
 void menuScreen() {
