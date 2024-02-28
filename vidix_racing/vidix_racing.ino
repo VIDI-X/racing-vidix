@@ -5,14 +5,16 @@
 
 uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
-float x_coord = 30;
-float y_coord = 31;
-float rotation = 32;
+float x_coord = 1;
+float y_coord = 1;
+float rotation = 1;
+float total_odo = 0;
 
 // dolazne vrijednosti od drugog igraca
-float ulazni_x_coord;
-float ulazni_y_coord;
-float ulazni_rotacija;
+float ulazni_x_coord = 0;
+float ulazni_y_coord = 0;
+float ulazni_rotacija = 0;
+float ulazni_total_odo = 0;
 
 // pomocna varijabla, debug
 String success;
@@ -21,6 +23,7 @@ typedef struct struct_message {
     float x_coord;
     float y_coord;
     float rotation;
+    float total_odo;
 } struct_message;
 
 struct_message coords;
@@ -41,6 +44,7 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   ulazni_x_coord = incomingReadings.x_coord;
   ulazni_y_coord = incomingReadings.y_coord;
   ulazni_rotacija = incomingReadings.rotation;
+  ulazni_total_odo = incomingReadings.total_odo;
 }
 
 
@@ -61,7 +65,7 @@ int PinTipkalo_MEN = 13;
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 int menuOptions;
 int startSP;
-
+//int moja_poc_poz = 0;
 
 
 
@@ -96,13 +100,14 @@ void setup() {
   camera.position = { 0, 5, -1 };
   camera.rotation(0) = 0.5;
   car.scale = { 1, 1, 2 };
-  car.position = { 0, 0, 0 };
-  car.rotation(1) = 1.3;
+  //moja_poc_poz = random(8);
+  car.position = { -8, 0, random(8) };
+  car.rotation(1) = 1.8;
 
 
   car2.scale = { 1, 1, 2 };
   car2.position = { -5, 0, -10 };
-  car2.rotation(1) = 1.3;
+  car2.rotation(1) = 1.8;
 
   start.scale.Fill((float)0.875);
   start.position = {0, 0, -6};
@@ -137,14 +142,16 @@ void setup() {
   }
   // funkcija koja se poziva kada dođu novi podatci
   esp_now_register_recv_cb(OnDataRecv);
+  send_my_pos(1, 1, 1, 0);
 }
 
 void loop() {
 
   if (startSP == 0) {
-    menuselection();
-    startpoint();
-  } else {
+    //menuselection();
+    //startpoint();
+    cekaj_prijatelja();
+  } else if (startSP == 1){
     Matrix<4> forward = { 0, 0, 1, 0 };
     //Serial.println(speed);
     forward = Normalize(car.getObjectToWorldMatrix() * forward);
@@ -175,7 +182,18 @@ void loop() {
     camera.drawObject(car, tft, ILI9341_WHITE);
     camera.drawObject(car2, tft, ILI9341_WHITE);
     camera.drawObject(start, tft, ILI9341_WHITE);
-    delay(40);
+    delay(30);
+
+    tft.fillRect(10, 10, 60, 30, ILI9341_BLACK);
+    tft.setCursor(10, 10); 
+    tft.setTextSize(3);
+    if(total_odo > ulazni_total_odo && ulazni_total_odo != -1){
+      tft.print("1st");
+      delay(5);
+    }else{
+      tft.print("2nd");
+    }
+
     //camera.drawObject(deblo, tft, ILI9341_BLACK);
     //camera.drawObject(krosnja, tft, ILI9341_BLACK);
     camera.drawObject(car, tft, ILI9341_BLACK);
@@ -197,10 +215,24 @@ void loop() {
         speed = 0.00000001;
       }
     }
+    float poz_prije_x = car.position(2);
+    float poz_prije_y = car.position(0);
 
     car.position(2) += forward(2);
     car.position(1) += forward(1);
     car.position(0) += forward(0);
+
+    total_odo += abs(sqrt(pow(car.position(2)-poz_prije_x, 2) + pow(car.position(0)-poz_prije_y, 2)));
+
+    //debug
+    //Serial.print("vektor x: " + String(forward(2)) + " vektor y: " + String(forward(0)) + " moj total odo: " + String(total_odo) + " ulazni total odo: " + String(ulazni_total_odo));
+    
+    if((car.position(2) > -10 && car.position(2) < 10) && (car.position(0) > -10 && car.position(0) < 10)){
+      //Serial.print("NA STARTU");
+      if(millis() > 30000) startSP = 2;
+    }
+    
+    Serial.println();
 
     if (digitalRead(PinTipkalo_B) == LOW) {
       speed -= decelerationRate * 1.5;
@@ -216,12 +248,32 @@ void loop() {
     }
 
     //posalji svoje koordinate
-    send_my_pos(car.position(2), car.position(0), car.rotation(1));
+    send_my_pos(car.position(2), car.position(0), car.rotation(1), total_odo);
 
     //primjeni promjene na neprijatelju
     car2.position(2) = ulazni_x_coord;
     car2.position(0) = ulazni_y_coord;
     car2.rotation(1) = ulazni_rotacija;
+
+    if(ulazni_total_odo == -1) startSP = 2;
+
+  } else if(startSP == 2){
+    tft.fillRect(10, 10, 60, 30, ILI9341_BLACK);
+    camera.drawObject(car, tft, ILI9341_WHITE);
+    camera.drawObject(car2, tft, ILI9341_WHITE);
+    camera.drawObject(start, tft, ILI9341_WHITE);
+
+    if(total_odo > ulazni_total_odo && ulazni_total_odo != -1){
+      send_my_pos(car.position(2), car.position(0), car.rotation(1), -1);
+      tft.setCursor(60, 180);
+      tft.setTextColor(ILI9341_GREEN);
+      tft.print("POBJEDA! :)");
+    }else{
+      tft.setCursor(50, 180);
+      tft.setTextColor(ILI9341_RED);
+      tft.print("IZGUBIO SI! :(");
+    }
+    for(;;);
   }
 }
 
@@ -242,9 +294,41 @@ void menuScreen() {
 }
 
 
+void cekaj_prijatelja(){
+  tft.setCursor(10, 20);
+  tft.print("UKLJUCI DRUGI");
+  tft.setCursor(10, 50);
+  tft.print("VIDIX");
+  while(ulazni_x_coord == 0){
+    Serial.println(ulazni_x_coord);
+  }
+  send_my_pos(1, 1, 1, 0);
+  tft.setCursor(80, 100);
+  tft.print("SPOJENO!");
+  delay(1000);
+  startSP = 1;
+  tft.fillScreen(ILI9341_BLACK);
+  //car.position(2) = ulazni_x_coord-3;
+  tft.setTextSize(5);
+  for(int i = 3; i > 0; i--){
+    tft.setCursor(110, 100);
+    tft.setTextColor(ILI9341_WHITE);
+    tft.print(i);
+    delay(1000);
+    tft.setCursor(110, 100);
+    tft.setTextColor(ILI9341_BLACK);
+    tft.print(i);  
+  }
 
+  tft.setCursor(110, 100);
+  tft.setTextColor(ILI9341_WHITE);
+  tft.print("GO!");
+  delay(200);
+  tft.fillScreen(ILI9341_BLACK);
+}
 
-
+/*
+//menu _TODO
 void menuselection() {
   if (startSP == 0) {
 
@@ -307,7 +391,7 @@ void menuselection() {
 }
 
 
-
+*/
 
 void pinsetup() {
   pinMode(PinTipkalo_L_R, INPUT_PULLUP);
@@ -333,10 +417,11 @@ void startpoint() {
 }
 
 
-void send_my_pos(float x_coord, float y_coord, float rotation){
+void send_my_pos(float x_coord, float y_coord, float rotation, float total_odo){
   coords.x_coord = x_coord;
   coords.y_coord = y_coord;
   coords.rotation = rotation;
+  coords.total_odo = total_odo;
 
   // Send message via ESP-NOW
   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &coords, sizeof(coords));
