@@ -267,11 +267,11 @@ void loop() {
       send_my_pos(car.position(2), car.position(0), car.rotation(1), -1);
       tft.setCursor(60, 180);
       tft.setTextColor(ILI9341_GREEN);
-      tft.print("POBJEDA! :)");
+      tft.print("VICTORY! :)");
     }else{
-      tft.setCursor(50, 180);
+      tft.setCursor(55, 180);
       tft.setTextColor(ILI9341_RED);
-      tft.print("IZGUBIO SI! :(");
+      tft.print("YOU LOST! :(");
     }
 
     tft.setCursor(10, 10);     
@@ -283,7 +283,7 @@ void loop() {
 
     tft.setTextSize(2);
     tft.setCursor(10, 220); 
-    tft.print("Drzi START za rematch");
+    tft.print("Hold START for rematch");
     while(digitalRead(PinTipkalo_ST) == HIGH);
     ESP.restart();
   }
@@ -301,15 +301,15 @@ void menuScreen() {
 
 void cekaj_prijatelja(){
   tft.setCursor(10, 20);
-  tft.print("UKLJUCI DRUGI");
+  tft.print("TURN ON OTHER");
   tft.setCursor(10, 50);
   tft.print("VIDIX");
   while(ulazni_x_coord == 0){
     Serial.println(ulazni_x_coord);
   }
   send_my_pos(1, 1, 1, 0);
-  tft.setCursor(80, 100);
-  tft.print("SPOJENO!");
+  tft.setCursor(70, 100);
+  tft.print("CONNECTED!");
   delay(1000);
   startSP = 1;
   tft.fillScreen(ILI9341_BLACK);
