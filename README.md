@@ -1,8 +1,12 @@
 # Car Race game 
+
+![Car_Racing](https://github.com/VIDI-X/racing-vidix/assets/68710971/4517de60-d04d-4e08-b7b1-c7c42988348e)
+
 ### Team: 3D _Owls
 ### School: Technical School Čakovec 
 ### Game name: Car Race 
-### https://github.com/IVskiller/racing-vidix/  
+### Original repo: https://github.com/IVskiller/racing-vidix/  
+
 
 ## Short description:  
 In order to play the game, we need two players and two VIDIX. Players connect to each other and they race together on a map displayed on the screen. The aim of the game is to complete the track as quickly as possible. The optimal path through the bend and by keeping the car on the track, the player has the highest speed. By landing from the track, the car loses a lot speed. 
